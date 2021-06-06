@@ -2,7 +2,6 @@ package com.zjz.community.dao;
 
 import com.zjz.community.entity.User;
 import org.apache.ibatis.annotations.Mapper;
-import org.springframework.stereotype.Repository;
 
 @Mapper
 public interface UserMapper {
