@@ -1,6 +1,7 @@
 package com.zjz.community.config;
 
 import com.zjz.community.controller.interceptor.AlphaInterceptor;
+import com.zjz.community.controller.interceptor.LoginRequiredInterceptor;
 import com.zjz.community.controller.interceptor.LoginTicketInterceptor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Configuration;
@@ -18,8 +19,8 @@ public class WebMvcConfig implements WebMvcConfigurer {
     @Autowired
     private LoginTicketInterceptor loginTicketInterceptor;
 
-//    @Autowired
-//    private LoginRequiredInterceptor loginRequiredInterceptor;
+    @Autowired
+    private LoginRequiredInterceptor loginRequiredInterceptor;
 
 //    @Autowired
 //    private MessageInterceptor messageInterceptor;
@@ -36,9 +37,9 @@ public class WebMvcConfig implements WebMvcConfigurer {
         registry.addInterceptor(loginTicketInterceptor)
                 .excludePathPatterns("/*/*.css", "/*/*.js", "/*/*.png", "/*/*.jpg", "/*/*.jpeg");
 
-////        registry.addInterceptor(loginRequiredInterceptor)
-////                .excludePathPatterns("/**/*.css", "/**/*.js", "/**/*.png", "/**/*.jpg", "/**/*.jpeg");
-//
+        registry.addInterceptor(loginRequiredInterceptor)
+                .excludePathPatterns("/*/*.css", "/*/*.js", "/*/*.png", "/*/*.jpg", "/*/*.jpeg");
+
 //        registry.addInterceptor(messageInterceptor)
 //                .excludePathPatterns("/**/*.css", "/**/*.js", "/**/*.png", "/**/*.jpg", "/**/*.jpeg");
 //

@@ -1,12 +1,12 @@
 package com.zjz.community.controller;
 
 
+import com.zjz.community.annotation.LoginRequired;
+import com.zjz.community.entity.User;
 import com.zjz.community.service.UserService;
 import com.zjz.community.util.CommunityConstant;
 import com.zjz.community.util.CommunityUtil;
 import com.zjz.community.util.HostHolder;
-//import com.qiniu.util.Auth;
-//import com.qiniu.util.StringMap;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -32,18 +32,23 @@ public class UserController implements CommunityConstant {
 
     private static final Logger logger = LoggerFactory.getLogger(com.zjz.community.controller.UserController.class);
 
+    // 上传路径
     @Value("${community.path.upload}")
     private String uploadPath;
 
+    // 域名
     @Value("${community.path.domain}")
     private String domain;
 
+    // 服务的名称
     @Value("${server.servlet.context-path}")
     private String contextPath;
 
+    // 调用上传头像这个方法
     @Autowired
     private UserService userService;
 
+    // 用于获取当前用户
     @Autowired
     private HostHolder hostHolder;
 
@@ -68,17 +73,17 @@ public class UserController implements CommunityConstant {
     @LoginRequired
     @RequestMapping(path = "/setting", method = RequestMethod.GET)
     public String getSettingPage(Model model) {
-        // 上传文件名称
-        String fileName = CommunityUtil.generateUUID();
-        // 设置响应信息
-        StringMap policy = new StringMap();
-        policy.put("returnBody", CommunityUtil.getJSONString(0));
-        // 生成上传凭证
-        Auth auth = Auth.create(accessKey, secretKey);
-        String uploadToken = auth.uploadToken(headerBucketName, fileName, 3600, policy);
-
-        model.addAttribute("uploadToken", uploadToken);
-        model.addAttribute("fileName", fileName);
+//        // 上传文件名称
+//        String fileName = CommunityUtil.generateUUID();
+//        // 设置响应信息
+//        StringMap policy = new StringMap();
+//        policy.put("returnBody", CommunityUtil.getJSONString(0));
+//        // 生成上传凭证
+//        Auth auth = Auth.create(accessKey, secretKey);
+//        String uploadToken = auth.uploadToken(headerBucketName, fileName, 3600, policy);
+//
+//        model.addAttribute("uploadToken", uploadToken);
+//        model.addAttribute("fileName", fileName);
 
         return "/site/setting";
     }
@@ -98,64 +103,68 @@ public class UserController implements CommunityConstant {
 //    }
 
 //    // 废弃
-//    @LoginRequired
-//    @RequestMapping(path = "/upload", method = RequestMethod.POST)
-//    public String uploadHeader(MultipartFile headerImage, Model model) {
-//        if (headerImage == null) {
-//            model.addAttribute("error", "您还没有选择图片!");
-//            return "/site/setting";
-//        }
-//
-//        String fileName = headerImage.getOriginalFilename();
-//        String suffix = fileName.substring(fileName.lastIndexOf("."));
-//        if (StringUtils.isBlank(suffix)) {
-//            model.addAttribute("error", "文件的格式不正确!");
-//            return "/site/setting";
-//        }
-//
-//        // 生成随机文件名
-//        fileName = CommunityUtil.generateUUID() + suffix;
-//        // 确定文件存放的路径
-//        File dest = new File(uploadPath + "/" + fileName);
-//        try {
-//            // 存储文件
-//            headerImage.transferTo(dest);
-//        } catch (IOException e) {
-//            logger.error("上传文件失败: " + e.getMessage());
-//            throw new RuntimeException("上传文件失败,服务器发生异常!", e);
-//        }
-//
-//        // 更新当前用户的头像的路径(web访问路径)
-//        // http://localhost:8080/community/user/header/xxx.png
-//        User user = hostHolder.getUser();
-//        String headerUrl = domain + contextPath + "/user/header/" + fileName;
-//        userService.updateHeader(user.getId(), headerUrl);
-//
-//        return "redirect:/index";
-//    }
+    @LoginRequired
+    @RequestMapping(path = "/upload", method = RequestMethod.POST)
+    public String uploadHeader(MultipartFile headerImage, Model model) {
+        if (headerImage == null) {
+            model.addAttribute("error", "您还没有选择图片!");
+            return "/site/setting";
+        }
 
-//    // 废弃
-//    @RequestMapping(path = "/header/{fileName}", method = RequestMethod.GET)
-//    public void getHeader(@PathVariable("fileName") String fileName, HttpServletResponse response) {
-//        // 服务器存放路径
-//        fileName = uploadPath + "/" + fileName;
-//        // 文件后缀
-//        String suffix = fileName.substring(fileName.lastIndexOf("."));
-//        // 响应图片
-//        response.setContentType("image/" + suffix);
-//        try (
-//                FileInputStream fis = new FileInputStream(fileName);
-//                OutputStream os = response.getOutputStream();
-//        ) {
-//            byte[] buffer = new byte[1024];
-//            int b = 0;
-//            while ((b = fis.read(buffer)) != -1) {
-//                os.write(buffer, 0, b);
-//            }
-//        } catch (IOException e) {
-//            logger.error("读取头像失败: " + e.getMessage());
-//        }
-//    }
+        // 不能按照原始的文件名进行存储，因为可能会重复名称；
+        // filename是上传者上传图片的名称
+        String fileName = headerImage.getOriginalFilename();
+        // 后缀
+        String suffix = fileName.substring(fileName.lastIndexOf("."));
+
+        if (StringUtils.isBlank(suffix)) {
+            model.addAttribute("error", "文件的格式不正确!");
+            return "/site/setting";
+        }
+
+        // 生成随机文件名
+        fileName = CommunityUtil.generateUUID() + suffix;
+        // 确定文件存放的路径
+        File dest = new File(uploadPath + "/" + fileName);
+        try {
+            // 存储文件
+            headerImage.transferTo(dest);
+        } catch (IOException e) {
+            logger.error("上传文件失败: " + e.getMessage());
+            throw new RuntimeException("上传文件失败,服务器发生异常!", e);
+        }
+
+        // 更新当前用户的头像的路径(web访问路径)
+        // http://localhost:8080/community/user/header/xxx.png
+        User user = hostHolder.getUser();
+        String headerUrl = domain + contextPath + "/user/header/" + fileName;
+        userService.updateHeader(user.getId(), headerUrl);
+
+        return "redirect:/index";
+    }
+
+    // 废弃
+    @RequestMapping(path = "/header/{fileName}", method = RequestMethod.GET)
+    public void getHeader(@PathVariable("fileName") String fileName, HttpServletResponse response) {
+        // 服务器存放路径
+        fileName = uploadPath + "/" + fileName;
+        // 文件后缀
+        String suffix = fileName.substring(fileName.lastIndexOf("."));
+        // 响应图片
+        response.setContentType("image/" + suffix);
+        try (
+                FileInputStream fis = new FileInputStream(fileName);
+                OutputStream os = response.getOutputStream();
+        ) {
+            byte[] buffer = new byte[1024];
+            int b = 0;
+            while ((b = fis.read(buffer)) != -1) {
+                os.write(buffer, 0, b);
+            }
+        } catch (IOException e) {
+            logger.error("读取头像失败: " + e.getMessage());
+        }
+    }
 
 //    // 个人主页
 //    @RequestMapping(path = "/profile/{userId}", method = RequestMethod.GET)
